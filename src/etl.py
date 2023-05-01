@@ -45,7 +45,7 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
 
         # file to record ingested files
         record_file = os.getenv("record_file")
-        
+
         # list of CSV file names in the source directory
         csv_files = [f for f in os.listdir(source_directory) if f.endswith("offers.csv")]
         for csv_file in csv_files:
@@ -54,6 +54,7 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
                 continue
         
         # read in the record file to a set
+        record_file=record_file.replace('\x0c', '') # replaces the form feed character with an empty string
         if os.path.isfile(record_file):
             with open(record_file, "r") as f:
                 ingested_files = set(f.read().splitlines())
@@ -80,15 +81,6 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
                     .mode("append") \
                     .save()
                 
-                # move the CSV file to the destination directory
-                destination_path = os.path.join(destination_directory, file)
-                shutil.move(file_path, destination_path)
-
-                # add the ingested file to the record file
-                record_file=record_file.replace('\x0c', '') # replaces the form feed character with an empty string
-                print("re is",record_file)
-                with open(record_file, "a") as f:
-                    f.write(file + "\n")
        
         # insert a new row into the audit table with success status and timestamp
         row_count = str(df_with_timestamp.count())
@@ -108,6 +100,15 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
             .option("password", password) \
             .mode("append") \
             .save()
+        
+        # move the CSV file to the destination directory
+        destination_path = os.path.join(destination_directory, file)
+        shutil.move(file_path, destination_path)
+
+        # add the ingested file to the record file
+        print("re is",record_file)
+        with open(record_file, "a") as f:
+            f.write(file + "\n")
 
     except Exception as e:
         # log the error
