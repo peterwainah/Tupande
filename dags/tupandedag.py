@@ -27,7 +27,7 @@ dag=DAG(
     default_args=default_args,
     start_date=datetime(2021,11,19,tzinfo=local_timezone),
     schedule_interval="0 18 * * 5",
-    template_searchpath="/opt/ETL_Project"
+  
 )
 
 
