@@ -1,7 +1,7 @@
 import unittest
 import os
 from pyspark.sql import SparkSession
-from Ingestion import load_leads
+from etl import load_leads
 ## Initiate dotenvcd
 load_dotenv()
 os.environ['PYSPARK_PYTHON'] = sys.executable
