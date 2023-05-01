@@ -1,13 +1,13 @@
 # Tupande DataEngineer
 ![](https://img.shields.io/pypi/pyversions/django.svg)
 
-# Ingestion
+# Ingestion Architure
 ![img.png ](image/TupandeHighlevel.png)
 ## Justification for using PySpark and Airflow
 
 ### PySpark
 - PySpark is a fast and powerful big data processing framework that enables processing of large datasets in a distributed and fault-tolerant manner.
-- PySpark offers a vast range of built-in libraries and functions that allow for advanced data manipulation and analysis, including SQL queries, machine learning, and graph processing.
+- PySpark offers a vast range of built-in libraries and functions that allow for advanced data manipulation and analysis, including SQL queries
 
 ### Airflow
 - Airflow provides a simple and intuitive interface for defining and orchestrating workflows as Directed Acyclic Graphs (DAGs), allowing for easy visualization of the entire data pipeline and its dependencies.
