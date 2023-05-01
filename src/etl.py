@@ -1,15 +1,17 @@
 from typing import Tuple
 import os
+import sys
 import shutil
 from datetime import datetime
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import lit
 from dotenv  import load_dotenv
 import logging
+from pyspark.sql.types import StructType, StructField, IntegerType
 
 ## Initiate dotenvcd
 load_dotenv()
-
+os.environ['PYSPARK_PYTHON'] = sys.executable
 
 
 
@@ -60,11 +62,10 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
 
         # loop through each CSV file and ingest it into a DataFrame
         for file in csv_files:
-            print(file)
             if file not in ingested_files:
                 file_path = os.path.join(source_directory, file)
                 df = spark.read.csv(file_path, header=True, inferSchema=True)
-                df.show()
+
 
                 
                 # write the DataFrame to SQL Server
@@ -88,25 +89,34 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
                 # with open(record_file, "a") as f:
                 #     f.write(file + "\n")
         # create the audit table if it doesn't exist
-        # spark.sql(f"CREATE TABLE IF NOT EXISTS {database_name}.audit (file_path STRING, row_count LONG, status STRING, ingestion_time TIMESTAMP)")
+        # spark.sql(f"CREATE TABLE IF NOT EXISTS {database_name}.stg.audit (file_path STRING, row_count LONG, status STRING, ingestion_time TIMESTAMP)")
         # insert a new row into the audit table with success status and timestamp
-        row_count = df.count()
-        audit_df = spark.createDataFrame([(file_path, row_count, "success", ingestion_time)],
-                                        ["file_path", "row_count", "status", "ingestion_time"])
-        # audit_df.write.format("jdbc") \
-        #     .option("url", f"jdbc:sqlserver://{server_name};database={database_name}") \
-        #     .option("dbtable", "stg.audit") \
-        #     .option("user", username) \
-        #     .option("password", password) \
-        #     .mode("append") \
-        #     .save()
+        row_count = str(df_with_timestamp.count())
+        ingestion_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(row_count,file_path,ingestion_time)
+        
+        if len(row_count) > 0:
+            audit_tuple = (file_path, row_count[0], "success", ingestion_time)
+            audit_df = spark.createDataFrame([audit_tuple], ["file_path", "row_count", "status", "ingestion_time"])
+            audit_df.show()
+        else:
+            print("No rows found in DataFrame")
+        audit_df.show()
+
+        audit_df.write.format("jdbc") \
+            .option("url", f"jdbc:sqlserver://{server_name};database={database_name};encrypt=false") \
+            .option("dbtable", "stg.audit") \
+            .option("user", username) \
+            .option("password", password) \
+            .mode("append") \
+            .save()
 
     except Exception as e:
         # log the error
         logging.error(f"An error occurred during ingestion: {str(e)}")
 
-    finally:
-        spark.stop()
+    # finally:
+        # spark.stop()
 
 
 if __name__ == "__main__":
