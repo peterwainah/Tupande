@@ -432,6 +432,19 @@ def load_leads(server_name: str, database_name: str, username: str, password: st
 
 
 def tupande_dataset(server_name: str, database_name: str, username: str, password: str,port: str):
+      """
+    Create custom dataset as per businesss requirements
+
+    :param source_directory: The directory containing the CSV files to ingest.
+    :param destination_directory: The directory to move the ingested CSV files to.
+    :param record_file: The file to record ingested file names.
+    :param server_name: The name of the SQL Server instance.
+    :param port: The port of the SQL Server instance.
+    :param database_name: The name of the SQL Server database.
+    :param username: The username to use to connect to the SQL Server database.
+    :param password: The password to use to connect to the SQL Server database.
+    :return: None
+    """
     # create a SparkSession
     spark = SparkSession.builder \
         .appName("Read and Query Dataframes") \
