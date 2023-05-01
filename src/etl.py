@@ -31,18 +31,18 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
     :param password: The password to use to connect to the SQL Server database.
     :return: None
     """
-    print("i am here")
+    
     try:
         
         # create a Spark session
         spark = SparkSession.builder.appName("CSV Ingestion").getOrCreate()
         # directory containing CSV files
         source_directory = os.getenv("source_directory")
-        print("source",source_directory)
+        
 
         # directory to move CSV files to
         destination_directory = os.getenv("destination_directory")
-        print("des",destination_directory)
+        
 
         # file to record ingested files
         record_file = os.getenv("record_file")
@@ -72,7 +72,6 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
                 ingestion_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 #add a timestamp column  
                 df_with_timestamp = df.withColumn("ingestion_time", lit(ingestion_time))
-                df_with_timestamp.show()
                 df_with_timestamp.write.format("jdbc") \
                     .option("url", f"jdbc:sqlserver://{server_name}:{port};database={database_name};encrypt=false") \
                     .option("dbtable", "stg.contract_offer")\
@@ -83,22 +82,19 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
                 
                 # move the CSV file to the destination directory
                 destination_path = os.path.join(destination_directory, file)
-                # shutil.move(file_path, destination_path)
+                shutil.move(file_path, destination_path)
 
                 # add the ingested file to the record file
-                # with open(record_file, "a") as f:
-                #     f.write(file + "\n")
-        # create the audit table if it doesn't exist
-        # spark.sql(f"CREATE TABLE IF NOT EXISTS {database_name}.stg.audit (file_path STRING, row_count LONG, status STRING, ingestion_time TIMESTAMP)")
+                with open(record_file, "a") as f:
+                    f.write(file + "\n")
+       
         # insert a new row into the audit table with success status and timestamp
         row_count = str(df_with_timestamp.count())
         ingestion_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(row_count,file_path,ingestion_time)
         
         if len(row_count) > 0:
             audit_tuple = (file_path, row_count, "success", ingestion_time)
             audit_df = spark.createDataFrame([audit_tuple], ["file_path", "row_count", "status", "ingestion_time"])
-            audit_df.show()
         else:
             print("No rows found in DataFrame")
         audit_df.show()
