@@ -13,7 +13,7 @@ load_dotenv()
 
 
 
-def load_contract_offer(server_name: str, database_name: str, username: str, password: str) -> None:
+def load_contract_offer(server_name: str, database_name: str, username: str, password: str,port: str) -> None:
     """
     Ingests CSV files from a source directory into a SQL Server database, and moves the ingested files to a
     destination directory. The function records the ingested file names in a record file, and updates an audit table
@@ -23,6 +23,7 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
     :param destination_directory: The directory to move the ingested CSV files to.
     :param record_file: The file to record ingested file names.
     :param server_name: The name of the SQL Server instance.
+    :param port: The port of the SQL Server instance.
     :param database_name: The name of the SQL Server database.
     :param username: The username to use to connect to the SQL Server database.
     :param password: The password to use to connect to the SQL Server database.
@@ -71,13 +72,13 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
                 #add a timestamp column  
                 df_with_timestamp = df.withColumn("ingestion_time", lit(ingestion_time))
                 df_with_timestamp.show()
-                # df_with_timestamp.write.format("jdbc") \
-                #     .option("url", f"jdbc:sqlserver://{server_name};database={database_name}") \
-                #     .option("dbtable", "stg.contract_offer")\
-                #     .option("user", username) \
-                #     .option("password", password) \
-                #     .mode("append") \
-                #     .save()
+                df_with_timestamp.write.format("jdbc") \
+                    .option("url", f"jdbc:sqlserver://{server_name}:{port};database={database_name};encrypt=false") \
+                    .option("dbtable", "stg.contract_offer")\
+                    .option("user", username) \
+                    .option("password", password) \
+                    .mode("append") \
+                    .save()
                 
                 # move the CSV file to the destination directory
                 destination_path = os.path.join(destination_directory, file)
@@ -112,9 +113,10 @@ if __name__ == "__main__":
 
     # SQL Server database credentials
     server_name = os.getenv("server_name")
+    port = os.getenv("port")
     database_name = os.getenv("database_name")
-    username = os.getenv("username")
+    username = os.getenv("db_username")
     password = os.getenv("password")
 
-load_contract_offer(server_name, database_name, username, password) 
+load_contract_offer(server_name, database_name, username, password,port) 
     
