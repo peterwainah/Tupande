@@ -1,43 +1,17 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType
-from datetime import datetime
-# Create a SparkSession
-spark = SparkSession.builder.appName("Create DataFrame").getOrCreate()
-row_count = str(4)
-file_path='c/c'
-ingestion_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-status="success"
+ select contracts.reference as Contract_reference ,contracts.[status],contracts.[nominal_contract_value],contracts.[cumulative_amount_paid],leads.state,leads.county,
+ DATEADD(day, 180, CONVERT(date, contracts.[start_date], 126)) as End_date,contract_offer.[name],CASE 
+           WHEN name LIKE '%group%' THEN 'Group loan'
+           WHEN name LIKE '%individual%' THEN 'Individual loan'
+           WHEN name LIKE '%cash%' THEN 'Cash sale'
+           ELSE 'Unknown'
+       END AS loan_type,
+	   CASE 
+           WHEN loan_type = 'Group loan' THEN DATEADD(day, 30, End_date)
+           WHEN loan_type = 'Paygo loan' THEN DATEADD(day, 30, End_date)
+           WHEN loan_type = 'Individual loan' THEN DATEADD(day, 60, End_date)
+           ELSE NULL
+       END AS maturity_date
 
-# # Define the schema of the DataFrame
-# schema = StructType([
-#     StructField("file_path", StringType(), True),
-#     StructField("row_count", IntegerType(), True),
-#     StructField("status", StringType(), True),
-#     StructField("ingestion_time", StringType(), True)
-# ])
-
-# # Create a list of tuples with the data
-# data = [(file_path, int(row_count), status, ingestion_time)]
-# print(data)
-
-# # Create a DataFrame from the list of tuples and the schema
-# df = spark.createDataFrame(data, schema=schema)
-
-# # Show the DataFrame
-# df.show()
-
-# list of tuples of plants data
-data = [("mango", "AP", "Guntur"),
-        ("mango", "AP", "Chittor"),
-        ("sugar cane", "AP", "amaravathi"),
-        ("paddy", "TS", "adilabad"),
-        ("wheat", "AP", "nellore")]
-  
-# giving column names of dataframe
-columns = ["Crop Name", "State", "District"]
-  
-# creating a dataframe
-dataframe = spark.createDataFrame(data, columns)
-  
-# show data frame
-dataframe.show()
+ from stg.contracts 
+ left join [stg].[leads]  on leads.id=contracts.lead_id
+ left join [stg].contract_offer on contract_offer.id=contracts.offer_id

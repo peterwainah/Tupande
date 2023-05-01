@@ -429,6 +429,79 @@ def load_leads(server_name: str, database_name: str, username: str, password: st
     finally:
         spark.stop()
 
+
+
+def tupande_dataset(server_name: str, database_name: str, username: str, password: str,port: str):
+    # create a SparkSession
+    spark = SparkSession.builder \
+        .appName("Read and Query Dataframes") \
+            .getOrCreate()
+
+
+    # specify the JDBC driver and URL
+    jdbcDriver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    jdbcUrl = "url", f"jdbc:sqlserver://{server_name};database={database_name};encrypt=false"
+
+    # set the connection properties
+    connectionProperties = {
+        "user": username,
+        "password":password,
+        "driver": jdbcDriver
+    }
+
+    # read the contracts table from SQL Server and create a temporary view
+    contracts_df = spark.read.jdbc(url=jdbcUrl, table="contracts", properties=connectionProperties)
+    contracts_df.createOrReplaceTempView("contracts")
+
+    # read the leads table from SQL Server and create a temporary view
+    leads_df = spark.read.jdbc(url=jdbcUrl, table="leads", properties=connectionProperties)
+    leads_df.createOrReplaceTempView("leads")
+
+    # read the contract_offer table from SQL Server and create a temporary view
+    contract_offer_df = spark.read.jdbc(url=jdbcUrl, table="contract_offer", properties=connectionProperties)
+    contract_offer_df.createOrReplaceTempView("contract_offer")
+
+    # run the SQL query
+    result_df = spark.sql("""
+        SELECT contracts.reference as Contract_reference,
+            contracts.[status] as Status,
+            contracts.[nominal_contract_value],
+            contracts.[cumulative_amount_paid],
+            leads.state as State,
+            leads.county,
+            DATEADD(day, 180, CAST(contracts.[start_date] AS DATE)) as End_date,
+            CASE 
+                WHEN contract_offer.[name] LIKE '%group%' THEN 'Group loan'
+                WHEN contract_offer.[name] LIKE '%individual%' THEN 'Individual loan'
+                WHEN contract_offer.[name] LIKE '%cash%' THEN 'Cash sale'
+                ELSE 'Unknown'
+            END AS loan_type,
+            CASE 
+                WHEN contract_offer.[name] LIKE '%group%' THEN DATEADD(day, 30, DATEADD(day, 180, CAST(contracts.[start_date] AS DATE)))
+                WHEN contract_offer.[name] LIKE '%paygo%' THEN DATEADD(day, 30, DATEADD(day, 180, CAST(contracts.[start_date] AS DATE)))
+                WHEN contract_offer.[name] LIKE '%individual%' THEN DATEADD(day, 60, DATEADD(day, 180, CAST(contracts.[start_date] AS DATE)))
+                ELSE NULL
+            END AS maturity_date,
+            DATEPART(quarter, CASE 
+                                    WHEN contract_offer.[name] LIKE '%group%' THEN DATEADD(day, 30, DATEADD(day, 180, CAST(contracts.[start_date] AS DATE)))
+                                    WHEN contract_offer.[name] LIKE '%paygo%' THEN DATEADD(day, 30, DATEADD(day, 180, CAST(contracts.[start_date] AS DATE)))
+                                    WHEN contract_offer.[name] LIKE '%individual%' THEN DATEADD(day, 60, DATEADD(day, 180, CAST(contracts.[start_date] AS DATE)))
+                                    ELSE NULL
+                                END) AS quarter_due
+        FROM contracts 
+        LEFT JOIN leads ON leads.id=contracts.lead_id
+        LEFT JOIN contract_offer ON contract_offer.id=contracts.offer_id
+    """)
+
+# ingest dataframe to table
+    result_df.write.format("jdbc") \
+        .option("url", f"jdbc:sqlserver://{server_name};database={database_name};encrypt=false") \
+        .option("dbtable", "dwh.tupande_dataset") \
+        .option("user", username) \
+        .option("password", password) \
+        .mode("append") \
+        .save()
+
 if __name__ == "__main__":
 
     # SQL Server database credentials
@@ -442,4 +515,5 @@ if __name__ == "__main__":
 # load_contract_payments(server_name, database_name, username, password,port)
 # load_contracts(server_name, database_name, username, password,port)
 load_leads(server_name, database_name, username, password,port)
+tupande_dataset(server_name, database_name, username, password,port)
     
