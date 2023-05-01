@@ -67,6 +67,8 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
 
                 
                 # write the DataFrame to SQL Server
+                ingestion_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                #add a timestamp column  
                 df_with_timestamp = df.withColumn("ingestion_time", lit(ingestion_time))
                 df_with_timestamp.show()
                 # df_with_timestamp.write.format("jdbc") \
@@ -88,7 +90,6 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
         # spark.sql(f"CREATE TABLE IF NOT EXISTS {database_name}.audit (file_path STRING, row_count LONG, status STRING, ingestion_time TIMESTAMP)")
         # insert a new row into the audit table with success status and timestamp
         row_count = df.count()
-        ingestion_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         audit_df = spark.createDataFrame([(file_path, row_count, "success", ingestion_time)],
                                         ["file_path", "row_count", "status", "ingestion_time"])
         # audit_df.write.format("jdbc") \
