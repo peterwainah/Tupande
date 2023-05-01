@@ -19,7 +19,7 @@ Together, PySpark and Airflow provide a powerful and scalable solution for proce
 # Ingestion ETL Flow
 ![img.png ](image/Tupandeetlflow.png)
 ## ETL Flow Explanation
-The logic starts by checking if the csv file had been already ingested ,it only proceede if the csv file has not been ingested.**Assumption** made is that the csv file submitted will uniquely distinguishing i.e by date with timestamp(i.e contracts_2022_10_10.12.00.csv).
+The logic starts by checking if the csv file had been already ingested ,it only proceede if the csv file has not been ingested.**Assumption** made is that the csv file submitted will be unique i.e by date with timestamp(i.e contracts_2022_10_10.12.00.csv).
 
 If file not ingested ,the ingestion will happen after a log to an audit table containing (file_name,row_count_ingestion_time).This table helps in tracking activity within the pipeline.Its usefulness can be for automating level one for failures i.e autoreconciliation incase of pipeline failures.
 
@@ -29,7 +29,8 @@ The ETL flow enhance Idempotent (Keeping same state even if its run multiple tim
 
 ### Project Folder
 
-The  project is made up of Three core Folder that contain the following python files:
+
+The  project is made up of Three core Folder that contain the following  files:
 
 a. dep (Dependencies) -> This folder contain the python requirements for installing and running the project 
 ```bash
@@ -64,7 +65,7 @@ c. dag -> Resource on the project and team operations are contained in this fold
 
 
 ### Project output Folder
-
+#### result
 Contains tupande output :
 
 
