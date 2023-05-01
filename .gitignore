@@ -160,7 +160,7 @@ cython_debug/
 #.idea/
 
 #venv
-.tupande/
+.tvenv/
 
 #doteenv
 src/.env
