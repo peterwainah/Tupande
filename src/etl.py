@@ -39,13 +39,13 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
         # directory containing CSV files
         source_directory = os.getenv("source_directory")
         
-
         # directory to move CSV files to
         destination_directory = os.getenv("destination_directory")
         
 
         # file to record ingested files
         record_file = os.getenv("record_file")
+        
         # list of CSV file names in the source directory
         csv_files = [f for f in os.listdir(source_directory) if f.endswith("offers.csv")]
         for csv_file in csv_files:
@@ -85,6 +85,8 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
                 shutil.move(file_path, destination_path)
 
                 # add the ingested file to the record file
+                record_file=record_file.replace('\x0c', '') # replaces the form feed character with an empty string
+                print("re is",record_file)
                 with open(record_file, "a") as f:
                     f.write(file + "\n")
        
