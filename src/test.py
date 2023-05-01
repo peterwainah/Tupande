@@ -1,17 +1,41 @@
- select contracts.reference as Contract_reference ,contracts.[status],contracts.[nominal_contract_value],contracts.[cumulative_amount_paid],leads.state,leads.county,
- DATEADD(day, 180, CONVERT(date, contracts.[start_date], 126)) as End_date,contract_offer.[name],CASE 
-           WHEN name LIKE '%group%' THEN 'Group loan'
-           WHEN name LIKE '%individual%' THEN 'Individual loan'
-           WHEN name LIKE '%cash%' THEN 'Cash sale'
-           ELSE 'Unknown'
-       END AS loan_type,
-	   CASE 
-           WHEN loan_type = 'Group loan' THEN DATEADD(day, 30, End_date)
-           WHEN loan_type = 'Paygo loan' THEN DATEADD(day, 30, End_date)
-           WHEN loan_type = 'Individual loan' THEN DATEADD(day, 60, End_date)
-           ELSE NULL
-       END AS maturity_date
+import unittest
+import os
+from pyspark.sql import SparkSession
+from Ingestion import load_leads
+## Initiate dotenvcd
+load_dotenv()
+os.environ['PYSPARK_PYTHON'] = sys.executable
 
- from stg.contracts 
- left join [stg].[leads]  on leads.id=contracts.lead_id
- left join [stg].contract_offer on contract_offer.id=contracts.offer_id
+
+class TestCSVIngestion(unittest.TestCase):
+    def setUp(self):
+        self.spark = SparkSession.builder.appName("TestCSVIngestion").master("local[*]").getOrCreate()
+        self.source_directory =os.getenv("source_directory")
+        self.destination_directory = os.getenv("destination_directory")
+        self.record_file = os.getenv("record_file")
+        self.record_file = os.getenv("record_file")
+        self.database_name = os.getenv("database_name")
+        self.username = os.getenv("username")
+
+    def tearDown(self):
+        self.spark.stop()
+
+    def test_ingest_csv_to_sql_server(self):
+        # create a test CSV file
+        test_df = self.spark.createDataFrame([(1, "John"), (2, "Jane"), (3, "Bob")], ["id", "name"])
+        test_df.write.csv(f"{self.source_directory}/test.csv", header=True)
+
+        # call the function
+        TestCSVIngestion(self.source_directory, self.destination_directory, self.record_file,
+                                 self.server_name, self.database_name, self.username, self.password)
+
+        # check that the CSV file was ingested
+        audit_df = self.spark.sql(f"SELECT * FROM {self.database_name}.audit")
+        self.assertEqual(audit_df.count(), 1)
+        self.assertEqual(audit_df.first().file_path, f"{self.source_directory}/test.csv")
+        self.assertEqual(audit_df.first().row_count, 3)
+        self.assertEqual(audit_df.first().status, "success")
+
+        # delete the test CSV file and the record file
+        shutil.rmtree(f"{self.destination_directory}/test.csv")
+        os.remove(self.record_file)
