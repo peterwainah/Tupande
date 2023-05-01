@@ -1,7 +1,7 @@
 # Tupande DataEngineer
 ![](https://img.shields.io/pypi/pyversions/django.svg)
 
-# Ingestion Architure
+# Ingestion Architecture
 ![img.png ](image/TupandeHighlevel.png)
 ## Justification for using PySpark and Airflow
 
