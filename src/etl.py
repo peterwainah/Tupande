@@ -96,7 +96,7 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
         print(row_count,file_path,ingestion_time)
         
         if len(row_count) > 0:
-            audit_tuple = (file_path, row_count[0], "success", ingestion_time)
+            audit_tuple = (file_path, row_count, "success", ingestion_time)
             audit_df = spark.createDataFrame([audit_tuple], ["file_path", "row_count", "status", "ingestion_time"])
             audit_df.show()
         else:
@@ -115,8 +115,8 @@ def load_contract_offer(server_name: str, database_name: str, username: str, pas
         # log the error
         logging.error(f"An error occurred during ingestion: {str(e)}")
 
-    # finally:
-        # spark.stop()
+    finally:
+        spark.stop()
 
 
 if __name__ == "__main__":
