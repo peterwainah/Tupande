@@ -51,10 +51,10 @@ b. src -> The folder contains etl file
 
 * etl.py - It contains pyspark file that extract and load data
 
-* env -> project setting and configuration folder 
+* env -> project setting file
 
 
-c. dag -> Resource on the project and team operations are contained in this folder.
+c. dag -> Contain Airflow dag files.
 
 ```bash
   ├── tupandedag.py
